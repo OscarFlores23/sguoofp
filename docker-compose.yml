@@ -1,0 +1,62 @@
+services:
+    database:
+        image: mysql:8  #Esto se camia dependiendo de lo que ponga en la tabla 
+        container_name: sgu-database #esto tambien cambia dependiendo de la tabla
+        environment:
+            MYSQL_ROOT_PASSWORD: root
+            MYSQL_DATABASE: sguoofp #Nombre de la base de datos
+        ports:
+            - "3307:3306"
+        networks: 
+            - sgu-net #Nombre de la red(tanton en la bd en el front y en el back se mantiene el mismo nombre)
+        volumes: 
+            - sgu-volume:/var/lib/mysql #Nombre del volumen (igual que el de la red)
+
+    frontend:
+        image: client:1.0-sgu #Nombre de la imagen depende de la tabla
+        build:
+            context: ./client
+            args: 
+                API_HOST: localhost
+                API_BASE: /api/usuarios  #este cambia si lo cambias en el testcontroller.java del back, es el requestmapping, si lo cambias ahi, lo cambias aqui
+                API_PORT: 8081
+        container_name: sgu-frontend #Nombre del contenedor depende de la tabla
+        ports:
+            - "3001:80"
+        networks:
+            - sgu-net #Nombre de la red (tanton en la bd en el front y en el back se mantiene el mismo nombre)
+        depends_on:
+        - database
+    
+    backend:
+        image:  server:1.0-sgu #Nombre de la imagen depende de la tabla
+        build:
+            context: ./Server #Ruta del Dockerfile del backend y es el nomrbe de la carpeta del backend
+        environment:
+            SERVER_PORT: 8080
+            DB_HOST: database
+            DB_PORT: 3306
+            DB_NAME: sguoofp #Nombre de la base de datos
+            DB_USER: root
+            DB_PASSWORD: root   #Password de la base de datos
+        container_name: sgu-backend #Nombre del contenedor depende de la tabla
+        ports:
+            - "8081:8080"
+        networks:
+            - sgu-net #Nombre de la red (tanton en la bd en el front y en el back se mantiene el mismo nombre)
+        depends_on:
+        - frontend
+
+# 1. docker volume create adj-volume
+volumes:
+    sgu-volume:  #Nombre del volumen depende de la tabla
+        external: true
+
+# 2. docker network create --driver bridge adj-net
+# docker network ls
+networks:
+    sgu-net:  #Nombre de la red depende de la tabla
+        external: true
+
+# 3. docker compose build --no-cache
+
